@@ -46,18 +46,24 @@ sub parsedir {
     my $nav_tpl = $tpl_nav;
 
     print "-+ Entering $d_prnt\n";
+    
+    my $addp = 0;
+    my $addpp = 0;
+
+    my @files = ();
 
     opendir(my $dfh, $p) || die "Failed to read: $d\n";
     while (my $f = readdir($dfh)) {
         if ( -d $p.$f) {
-            if ($f eq ".") {
-                $nav .= "<a href='./'>.</a>\n";  
+            if ($f eq ".") {                
+                $addp = 1;
             } elsif ($f eq "..") {
                 if ($i > 0) {
-                    $nav .= "<a href='../'>..</a>\n"; 
+                    $addpp = 1;
                 }
             } else {
-                $nav .= "<a href='$f/'>$f</a>\n";
+                push @files, ["$f/", "$f"];
+                # $nav .= "<a href='$f/'>$f</a>\n";
                 parsedir($d.$f."/", 1);
             }
         } else {
@@ -70,10 +76,24 @@ sub parsedir {
                 $files{$fn} = $src;
 
                 if ($fn ne "index" && substr($fn, 0, 1) ne "_") {
-                    $nav .= "<a href='$fn.html'>$fn</a>\n";
+                    push @files, ["$fn.html", $fn];
                 }
             }
         }
+    }
+    
+    if ($addpp) {
+        $nav = "<a href='../'>..</a>\n".$nav;
+    }
+    
+    if ($addp) {
+        $nav = "<a href='./'>.</a>\n".$nav;
+    }
+    
+    my @fsorted = sort { $a->[1] cmp $b->[1] || $a->[2] cmp $b->[2] } @files;
+    
+    for my $aref (@fsorted) {
+        $nav .= "<a href='".$aref->[0]."'>".$aref->[1]."</a>";    
     }
 
     if ($d ne "") {
